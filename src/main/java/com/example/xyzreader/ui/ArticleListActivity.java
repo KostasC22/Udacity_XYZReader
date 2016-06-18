@@ -1,5 +1,7 @@
 package com.example.xyzreader.ui;
 
+import android.app.Activity;
+import android.app.ActivityOptions;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -43,11 +45,14 @@ public class ArticleListActivity extends AppCompatActivity implements
     private Toolbar mToolbar;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private RecyclerView mRecyclerView;
+    private Activity mActivity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_article_list);
+
+        mActivity = this;
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         // stackoverflow solution http://stackoverflow.com/questions/31662416/show-collapsingtoolbarlayout-title-only-when-collapsed
@@ -158,12 +163,20 @@ public class ArticleListActivity extends AppCompatActivity implements
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = getLayoutInflater().inflate(R.layout.list_item_article, parent, false);
+            final View sharedView = view.findViewById(R.id.thumbnail);
             final ViewHolder vh = new ViewHolder(view);
             view.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    startActivity(new Intent(Intent.ACTION_VIEW,
-                            ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))));
+//                    Bundle bundle = ActivityOptions.makeSceneTransitionAnimation(ArticleListActivity.this,sharedView,sharedView.getTransitionName()).toBundle();
+//
+//                    startActivity(new Intent(Intent.ACTION_VIEW,
+//                            ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))),bundle);
+                    Intent intent = new Intent( Intent.ACTION_VIEW, ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition())),ArticleListActivity.this, ArticleDetailActivity.class);
+
+                    startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(ArticleListActivity.this,
+                            sharedView, sharedView.getTransitionName()).toBundle());
+
                 }
             });
             return vh;
@@ -183,7 +196,7 @@ public class ArticleListActivity extends AppCompatActivity implements
             holder.thumbnailView.setImageUrl(
                     mCursor.getString(ArticleLoader.Query.THUMB_URL),
                     ImageLoaderHelper.getInstance(ArticleListActivity.this).getImageLoader());
-            holder.thumbnailView.setAspectRatio(mCursor.getFloat(ArticleLoader.Query.ASPECT_RATIO));
+            holder.thumbnailView.setAspectRatio(2);
         }
 
         @Override
@@ -201,7 +214,7 @@ public class ArticleListActivity extends AppCompatActivity implements
             super(view);
             thumbnailView = (DynamicHeightNetworkImageView) view.findViewById(R.id.thumbnail);
             //thumbnailView.setScaleType(ImageView.ScaleType.CENTER);
-            thumbnailView.setScaleType(ImageView.ScaleType.FIT_XY);
+            thumbnailView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             titleView = (TextView) view.findViewById(R.id.article_title);
             subtitleView = (TextView) view.findViewById(R.id.article_subtitle);
         }

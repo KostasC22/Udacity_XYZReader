@@ -21,6 +21,7 @@
         <item name="colorPrimary">#ff9800</item>
         <item name="colorPrimaryDark">#ff5722</item>
         <item name="colorAccent">#ffc107</item>
+        <item name="android:windowContentTransitions">true</item>
     </style>
 
     <style name="Theme.Bacon.Detail">

@@ -19,8 +19,9 @@
         <com.example.xyzreader.ui.DynamicHeightNetworkImageView
             android:id="@+id/thumbnail"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/photo_placeholder" />
+            android:layout_height="100dp"
+            android:background="@color/photo_placeholder"
+            android:transitionName="@string/myshare_element_transition"/>
 
         <TextView
             android:id="@+id/article_title"

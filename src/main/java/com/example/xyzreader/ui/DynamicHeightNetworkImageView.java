@@ -8,7 +8,6 @@ import com.android.volley.toolbox.NetworkImageView;
 
 public class DynamicHeightNetworkImageView extends NetworkImageView {
 
-    private static final String TAG = "DHNIV";
     private float mAspectRatio = 1.5f;
 
     public DynamicHeightNetworkImageView(Context context) {
@@ -33,6 +32,5 @@ public class DynamicHeightNetworkImageView extends NetworkImageView {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         int measuredWidth = getMeasuredWidth();
         setMeasuredDimension(measuredWidth, (int) (measuredWidth / mAspectRatio));
-        Log.i(TAG, "onMeasure: "+measuredWidth+" "+(int) (measuredWidth / mAspectRatio));
     }
 }
