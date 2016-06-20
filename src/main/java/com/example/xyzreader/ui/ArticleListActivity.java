@@ -12,6 +12,8 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.util.Pair;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
@@ -32,6 +34,7 @@ import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
 import com.example.xyzreader.data.ItemsContract;
 import com.example.xyzreader.data.UpdaterService;
+import com.squareup.picasso.Picasso;
 
 /**
  * An activity representing a list of Articles. This activity has different presentations for
@@ -163,7 +166,9 @@ public class ArticleListActivity extends AppCompatActivity implements
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = getLayoutInflater().inflate(R.layout.list_item_article, parent, false);
-            final View sharedView = view.findViewById(R.id.thumbnail);
+            final View imageViewArticle = view.findViewById(R.id.thumbnail);
+            final View textTitleArticle = view.findViewById(R.id.article_title);
+            final View textInfoArticle = view.findViewById(R.id.article_subtitle);
             final ViewHolder vh = new ViewHolder(view);
             view.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -172,10 +177,15 @@ public class ArticleListActivity extends AppCompatActivity implements
 //
 //                    startActivity(new Intent(Intent.ACTION_VIEW,
 //                            ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))),bundle);
-                    Intent intent = new Intent( Intent.ACTION_VIEW, ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition())),ArticleListActivity.this, ArticleDetailActivity.class);
+                    Intent intent = new Intent(ArticleListActivity.this, ArticleDetailActivity.class);
 
-                    startActivity(intent, ActivityOptions.makeSceneTransitionAnimation(ArticleListActivity.this,
-                            sharedView, sharedView.getTransitionName()).toBundle());
+                    Pair<View, String> p1 = new Pair<>(imageViewArticle, getString(R.string.myshare_imageview_transition));
+                    Pair<View, String> p2 = new Pair<>(textTitleArticle, getString(R.string.myshare_articletitle_transition));
+                    Pair<View, String> p3 = new Pair<>(textInfoArticle, getString(R.string.myshare_articleinfo_transition));
+
+                    ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(ArticleListActivity.this, p1, p2, p3);
+
+                    startActivity(intent, options.toBundle());
 
                 }
             });
@@ -193,10 +203,12 @@ public class ArticleListActivity extends AppCompatActivity implements
                             DateUtils.FORMAT_ABBREV_ALL).toString()
                             + " by "
                             + mCursor.getString(ArticleLoader.Query.AUTHOR));
-            holder.thumbnailView.setImageUrl(
-                    mCursor.getString(ArticleLoader.Query.THUMB_URL),
-                    ImageLoaderHelper.getInstance(ArticleListActivity.this).getImageLoader());
-            holder.thumbnailView.setAspectRatio(2);
+//            holder.thumbnailView.setImageUrl(
+//                    mCursor.getString(ArticleLoader.Query.THUMB_URL),
+//                    ImageLoaderHelper.getInstance(ArticleListActivity.this).getImageLoader());
+            //holder.thumbnailView.setAspectRatio(2);
+            Picasso.with(ArticleListActivity.this).load(mCursor.getString(ArticleLoader.Query.THUMB_URL))
+                    .placeholder(R.mipmap.ic_launcher).error(R.mipmap.symbols_warning).fit().into( holder.thumbnailView);
         }
 
         @Override
@@ -206,13 +218,13 @@ public class ArticleListActivity extends AppCompatActivity implements
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public DynamicHeightNetworkImageView thumbnailView;
+        public ImageView thumbnailView;
         public TextView titleView;
         public TextView subtitleView;
 
         public ViewHolder(View view) {
             super(view);
-            thumbnailView = (DynamicHeightNetworkImageView) view.findViewById(R.id.thumbnail);
+            thumbnailView = (ImageView) view.findViewById(R.id.thumbnail);
             //thumbnailView.setScaleType(ImageView.ScaleType.CENTER);
             thumbnailView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             titleView = (TextView) view.findViewById(R.id.article_title);

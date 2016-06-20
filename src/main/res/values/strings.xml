@@ -9,7 +9,10 @@
 
     <string name="up">Up</string>
 
-    <string name="myshare_element_transition">MyShareElement</string>
+    <string name="myshare_imageview_transition">MyShareElement</string>
+    <string name="myshare_articletitle_transition">MyShareElement</string>
+    <string name="myshare_articleinfo_transition">MyShareElement</string>
+
     <string name="title_activity_scrolling">ScrollingActivity</string>
     <string name="large_text">
         "Material is the metaphor.\n\n"
