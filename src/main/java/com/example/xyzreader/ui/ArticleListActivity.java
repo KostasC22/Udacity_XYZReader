@@ -36,6 +36,8 @@ import com.example.xyzreader.data.ItemsContract;
 import com.example.xyzreader.data.UpdaterService;
 import com.squareup.picasso.Picasso;
 
+import org.w3c.dom.Text;
+
 /**
  * An activity representing a list of Articles. This activity has different presentations for
  * handset and tablet-size devices. On handsets, the activity presents a list of items, which when
@@ -49,6 +51,11 @@ public class ArticleListActivity extends AppCompatActivity implements
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private RecyclerView mRecyclerView;
     private Activity mActivity;
+    static final String EXTRA_STARTING_ALBUM_POSITION = "extra_starting_item_position";
+    static final String EXTRA_PHOTO_URL = "extra_photo_url";
+    static final String EXTRA_ARTICLE_TITLE = "extra_article_title";
+    static final String EXTRA_ARTICLE_CREATOR = "extra_article_creator";
+    private String photoURL, articleTitle, articleCreator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -152,6 +159,7 @@ public class ArticleListActivity extends AppCompatActivity implements
 
     private class Adapter extends RecyclerView.Adapter<ViewHolder> {
         private Cursor mCursor;
+        private int mAlbumPosition;
 
         public Adapter(Cursor cursor) {
             mCursor = cursor;
@@ -160,6 +168,7 @@ public class ArticleListActivity extends AppCompatActivity implements
         @Override
         public long getItemId(int position) {
             mCursor.moveToPosition(position);
+            mAlbumPosition = position;
             return mCursor.getLong(ArticleLoader.Query._ID);
         }
 
@@ -177,13 +186,19 @@ public class ArticleListActivity extends AppCompatActivity implements
 //
 //                    startActivity(new Intent(Intent.ACTION_VIEW,
 //                            ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition()))),bundle);
-                    Intent intent = new Intent(ArticleListActivity.this, ArticleDetailActivity.class);
+                    Intent intent = new Intent(Intent.ACTION_VIEW,ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition())),ArticleListActivity.this, ArticleDetailActivity.class);
+                    intent.putExtra(EXTRA_STARTING_ALBUM_POSITION, mAlbumPosition);
+                    intent.putExtra(EXTRA_PHOTO_URL, photoURL);
+                    intent.putExtra(EXTRA_ARTICLE_TITLE, articleTitle);
+                    intent.putExtra(EXTRA_ARTICLE_CREATOR, articleCreator);
+                    Log.i("click test", "onClick: "+getItemId(vh.getAdapterPosition()));
+                    Log.i("click test", "onClick: "+ ItemsContract.Items.buildItemUri(getItemId(vh.getAdapterPosition())));
 
                     Pair<View, String> p1 = new Pair<>(imageViewArticle, getString(R.string.myshare_imageview_transition));
                     Pair<View, String> p2 = new Pair<>(textTitleArticle, getString(R.string.myshare_articletitle_transition));
                     Pair<View, String> p3 = new Pair<>(textInfoArticle, getString(R.string.myshare_articleinfo_transition));
 
-                    ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(ArticleListActivity.this, p1, p2, p3);
+                    ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(mActivity, p1, p2, p3);
 
                     startActivity(intent, options.toBundle());
 
@@ -195,20 +210,21 @@ public class ArticleListActivity extends AppCompatActivity implements
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
             mCursor.moveToPosition(position);
-            holder.titleView.setText(mCursor.getString(ArticleLoader.Query.TITLE));
-            holder.subtitleView.setText(
-                    DateUtils.getRelativeTimeSpanString(
-                            mCursor.getLong(ArticleLoader.Query.PUBLISHED_DATE),
-                            System.currentTimeMillis(), DateUtils.HOUR_IN_MILLIS,
-                            DateUtils.FORMAT_ABBREV_ALL).toString()
-                            + " by "
-                            + mCursor.getString(ArticleLoader.Query.AUTHOR));
+            articleTitle = mCursor.getString(ArticleLoader.Query.TITLE);
+            holder.titleView.setText(articleTitle);
+            articleCreator  = DateUtils.getRelativeTimeSpanString(
+                    mCursor.getLong(ArticleLoader.Query.PUBLISHED_DATE),
+                    System.currentTimeMillis(), DateUtils.HOUR_IN_MILLIS,
+                    DateUtils.FORMAT_ABBREV_ALL).toString()
+                    + " by "
+                    + mCursor.getString(ArticleLoader.Query.AUTHOR);
+            holder.subtitleView.setText(articleCreator);
 //            holder.thumbnailView.setImageUrl(
 //                    mCursor.getString(ArticleLoader.Query.THUMB_URL),
 //                    ImageLoaderHelper.getInstance(ArticleListActivity.this).getImageLoader());
             //holder.thumbnailView.setAspectRatio(2);
-            Picasso.with(ArticleListActivity.this).load(mCursor.getString(ArticleLoader.Query.THUMB_URL))
-                    .placeholder(R.mipmap.ic_launcher).error(R.mipmap.symbols_warning).fit().into( holder.thumbnailView);
+            photoURL = mCursor.getString(ArticleLoader.Query.THUMB_URL);
+            Picasso.with(ArticleListActivity.this).load(photoURL).placeholder(R.mipmap.ic_launcher).error(R.mipmap.symbols_warning).fit().into( holder.thumbnailView);
         }
 
         @Override
