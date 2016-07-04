@@ -11,6 +11,8 @@ import android.content.Loader;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.view.ViewPager;
@@ -26,12 +28,14 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.xyzreader.Article;
 import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
 import com.example.xyzreader.data.ItemsContract;
 import com.example.xyzreader.data.UpdaterService;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +44,8 @@ import java.util.Map;
  */
 public class ArticleDetailActivity extends AppCompatActivity
         implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    private static final String ARTICLE_DETAILS = "article_details";
 
     private Cursor mCursor;
     private long mStartId;
@@ -52,6 +58,8 @@ public class ArticleDetailActivity extends AppCompatActivity
     private int mCurrentPosition;
     private int mStartingPosition;
 
+    private String photoURL;
+
     private ViewPager mPager;
     private MyPagerAdapter mPagerAdapter;
     private Activity mContext;
@@ -59,6 +67,7 @@ public class ArticleDetailActivity extends AppCompatActivity
     private TextView mTextViewTitle, mTextViewAuthor, mTextViewBody;
     private View mUpButtonContainer;
     private View mUpButton;
+    private Article temp;
 
     private static final String TAG = "ArticleDetailActivity";
     private static final String STATE_CURRENT_PAGE_POSITION = "state_current_page_position";
@@ -66,20 +75,21 @@ public class ArticleDetailActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-                            View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
-        }
+
         setContentView(R.layout.activity_article_detail);
         Log.i(TAG, "onCreate: ");
         supportPostponeEnterTransition();
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("");
 
         mStartingPosition = getIntent().getIntExtra(ArticleListActivity.EXTRA_STARTING_ALBUM_POSITION, 0);
         if (savedInstanceState == null) {
             mCurrentPosition = mStartingPosition;
         } else {
+            Log.i(TAG,"-----------------"+savedInstanceState.isEmpty());
             mCurrentPosition = savedInstanceState.getInt(STATE_CURRENT_PAGE_POSITION);
         }
 
@@ -107,6 +117,14 @@ public class ArticleDetailActivity extends AppCompatActivity
                 mStartId = ItemsContract.Items.getItemId(getIntent().getData());
                 mSelectedItemId = mStartId;
             }
+        } else {
+
+            Article temp = savedInstanceState.getParcelable(ARTICLE_DETAILS);
+            Picasso.with(this).load(temp.getPhotoURL()).placeholder(R.mipmap.ic_launcher).error(R.mipmap.symbols_warning).fit().into( mPhotoView);
+            mTextViewTitle.setText(temp.getTitle());
+            mTextViewAuthor.setText(temp.getAuthor());
+            mTextViewBody.setText(temp.getBody());
+            photoURL = temp.getPhotoURL();
         }
 
 
@@ -122,21 +140,47 @@ public class ArticleDetailActivity extends AppCompatActivity
             }
         });
 
+
+        // stackoverflow solution http://stackoverflow.com/questions/31662416/show-collapsingtoolbarlayout-title-only-when-collapsed
+        final CollapsingToolbarLayout collapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
+        AppBarLayout appBarLayout = (AppBarLayout) findViewById(R.id.app_bar_layout);
+        final ImageView toolbarImage = (ImageView) findViewById(R.id.image_toolbar);
+        appBarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
+            boolean isShow = false;
+            int scrollRange = -1;
+
+            @Override
+            public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+                if (scrollRange == -1) {
+                    scrollRange = appBarLayout.getTotalScrollRange();
+                }
+                if (scrollRange + verticalOffset == 0) {
+                    collapsingToolbarLayout.setTitle(mTextViewTitle.getText());
+                    isShow = true;
+                } else if(isShow) {
+                    collapsingToolbarLayout.setTitle("");
+                    isShow = false;
+                }
+            }
+        });
+        // stackoverflow end
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-
+        Log.i(TAG, "onStart: ");
     }
 
     @Override
     protected void onStop() {
         super.onStop();
+        Log.i(TAG, "onStop: ");
     }
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        Log.i(TAG, "onCreateLoader: ");
         return ArticleLoader.newAllArticlesInstance(this);
     }
 
@@ -154,7 +198,7 @@ public class ArticleDetailActivity extends AppCompatActivity
                     final int position = mCursor.getPosition();
                     Log.i(TAG, "onLoadFinished: "+position);
                     Log.i(TAG, "onLoadFinished: "+mCursor.getString(ArticleLoader.Query.TITLE));
-                    String photoURL = mCursor.getString(ArticleLoader.Query.PHOTO_URL);
+                    photoURL = mCursor.getString(ArticleLoader.Query.PHOTO_URL);
                     Picasso.with(this).load(photoURL).placeholder(R.mipmap.ic_launcher).error(R.mipmap.symbols_warning).fit().into( mPhotoView);
                     mTextViewTitle.setText(mCursor.getString(ArticleLoader.Query.TITLE));
                     mTextViewAuthor.setText(Html.fromHtml(
@@ -206,6 +250,29 @@ public class ArticleDetailActivity extends AppCompatActivity
         public int getCount() {
             return (mCursor != null) ? mCursor.getCount() : 0;
         }
+    }
+
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.i(TAG, "onSaveInstanceState: *********************");
+        Log.i(TAG, "onSaveInstanceState: 1"+photoURL);
+        Log.i(TAG, "onSaveInstanceState: 2"+mTextViewTitle.getText().toString());
+        Log.i(TAG, "onSaveInstanceState: 3"+mTextViewAuthor.getText().toString());
+        Log.i(TAG, "onSaveInstanceState: 4"+mTextViewBody.getText().toString());
+        if(temp == null){
+            temp = new Article(photoURL,mTextViewTitle.getText().toString(),mTextViewAuthor.getText().toString(),mTextViewBody.getText().toString());
+        } else {
+            Log.i(TAG, "onSaveInstanceState: 5"+temp.toString());
+        }
+        outState.putParcelable(ARTICLE_DETAILS, temp);
+    }
+
+    private void getDataFromCursor(Cursor cursor){
+
+
+
     }
 
 }
